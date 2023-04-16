@@ -44,7 +44,7 @@ smtg_add_vst3plugin(AudioQAM
 if(SMTG_ADD_VSTGUI)
     target_sources(AudioQAM
         PRIVATE
-            resource/AQeditor.uidesc
+            resource/AudioQAM.uidesc
     )
     target_link_libraries(AudioQAM
         PRIVATE
