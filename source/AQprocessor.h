@@ -17,7 +17,6 @@
 #include "AQDDS.h"
 #include "AQHilbert.h"
 #include "SO2ndordIIRfilters.h"
-#include "pluginterfaces/vst/ivstparameterchanges.h"
 
 using namespace Steinberg;
 using namespace Vst;

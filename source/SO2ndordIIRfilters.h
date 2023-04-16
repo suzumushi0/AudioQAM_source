@@ -1,7 +1,7 @@
 //
 // Copyright (c) 2021-2023 suzumushi
 //
-// 2023-4-2		SO2ndordIIRfilters.h
+// 2023-4-13		SO2ndordIIRfilters.h
 //
 // Licensed under Creative Commons Attribution-NonCommercial-ShareAlike 4.0 (CC BY-NC-SA 4.0).
 //
@@ -50,8 +50,8 @@ template <typename TYPE>
 class SOsphere_scattering: public SO2ndordIIRfilter <TYPE> {
 public:
 	void setup (const TYPE cT, const TYPE a);
-	TYPE process (const TYPE xn, const TYPE cos_thetao) override;
-	void process (const TYPE xn, const TYPE sin_phiL, TYPE& para, TYPE& cross) override;
+	TYPE process (const TYPE xn, const TYPE cos_thetao);
+	void process (const TYPE xn, const TYPE sin_phiL, TYPE& para, TYPE& cross);
 };
 
 template <typename TYPE>
@@ -60,7 +60,7 @@ void SOsphere_scattering <TYPE>:: setup (const TYPE cT, const TYPE a)
 	TYPE omega_a = tan (cT / (2.0 * a));								// omega_a = tan (c * T / (2 * a))
 	TYPE omega_a_2 = 2.0 * pow (omega_a, 2.0);							// omega_a_2 = 2 * omega_a^2
 	this->a [0] = omega_a_2 + 2.0 * omega_a + 1.0;						// a [0] = 2 * omega_a^2 + 2 * omega_a + 1
-	this->a [1] = -2.0 * (omega_a_2 - 1.0) / this,a [0];				// a [1] = -2 * (2 * omega_a^2 - 1) / a [0]
+	this->a [1] = -2.0 * (omega_a_2 - 1.0) / this->a [0];				// a [1] = -2 * (2 * omega_a^2 - 1) / a [0]
 	this->a [2] = - (omega_a_2 - 2.0 * omega_a + 1.0) / this->a [0];	// a [2] = -(2 * omega_a^2 - 2 * omega_a + 1) / a [0]
 	this->b [0] = (omega_a + 1.0) / this->a [0];						// b [0] = (omega_a + 1) / a [0]
 	this->b [1] = -2.0 / this->a [0];									// b [1] = -2 / a [0]
