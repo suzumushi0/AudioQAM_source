@@ -1,7 +1,7 @@
 //
 // Copyright (c) 2023 suzumushi
 //
-// 2023-4-5		AQcontroller.cpp
+// 2023-5-8		AQcontroller.cpp
 //
 // Licensed under Creative Commons Attribution-NonCommercial-ShareAlike 4.0 (CC BY-NC-SA 4.0).
 //
@@ -50,6 +50,12 @@ tresult PLUGIN_API AudioQAMController:: initialize (FUnknown* context)
 	wform_param -> appendString (STR16 ("Sawtooth"));
 	parameters.addParameter (wform_param);
 
+	Vst::StringListParameter* auto_bl_param = new Vst::StringListParameter (
+		STR16 ("Input band-limiting"), auto_bl.tag, nullptr, auto_bl.flags);
+	auto_bl_param -> appendString (STR16 ("Manual"));
+	auto_bl_param -> appendString (STR16 ("Automatic"));
+	parameters.addParameter (auto_bl_param);
+
 	Vst::RangeParameter* c_slide_param = new Vst::RangeParameter (
 		STR16 ("Slider position"), c_slide.tag, STR16 (""),
 		c_slide.min, c_slide.max, c_slide.def, c_slide.steps, c_slide.flags);
@@ -78,7 +84,7 @@ tresult PLUGIN_API AudioQAMController:: initialize (FUnknown* context)
 	i_h_freq_param -> setPrecision (precision0);
 	parameters.addParameter (i_h_freq_param);
 
-	Vst::LogTaperParameter* i_l_freq_param = new Vst::LogTaperParameter (
+	Vst::InfLogTaperParameter* i_l_freq_param = new Vst::InfLogTaperParameter (
 		STR16 ("Input LPF cutoff frequency"), i_l_freq.tag, STR16 ("Hz"),
 		i_l_freq.min, i_l_freq.max, i_l_freq.def, i_l_freq.steps, i_l_freq.flags);
 	i_l_freq_param -> setPrecision (precision0);
@@ -90,7 +96,7 @@ tresult PLUGIN_API AudioQAMController:: initialize (FUnknown* context)
 	o_h_freq_param -> setPrecision (precision0);
 	parameters.addParameter (o_h_freq_param);
 
-	Vst::LogTaperParameter* o_l_freq_param = new Vst::LogTaperParameter (
+	Vst::InfLogTaperParameter* o_l_freq_param = new Vst::InfLogTaperParameter (
 		STR16 ("Output LPF cutoff frequency"), o_l_freq.tag, STR16 ("Hz"),
 		o_l_freq.min, o_l_freq.max, o_l_freq.def, o_l_freq.steps, o_l_freq.flags);
 	o_l_freq_param -> setPrecision (precision0);
@@ -129,9 +135,10 @@ tresult PLUGIN_API AudioQAMController:: setComponentState (IBStream* state)
 	// suzumushi:
 	ParamValue dtmp;
 	int32 itmp;
+	int32 version;
 	IBStreamer streamer (state, kLittleEndian);
 
-	if (streamer.readInt32 (itmp) == false)					// version
+	if (streamer.readInt32 (version) == false)
 		return (kResultFalse);
 
 	if (streamer.readDouble (dtmp) == false)
@@ -141,6 +148,14 @@ tresult PLUGIN_API AudioQAMController:: setComponentState (IBStream* state)
 	if (streamer.readInt32 (itmp) == false)
 		return (kResultFalse);
 	setParamNormalized (wform.tag, plainParamToNormalized (wform.tag, (ParamValue)itmp));
+
+	if (version == 0)
+		itmp = (int32) AUTO_BL_L::AUTOMATIC;
+	else {
+		if (streamer.readInt32 (itmp) == false)
+			return (kResultFalse);
+	}
+	setParamNormalized (auto_bl.tag, plainParamToNormalized (auto_bl.tag, (ParamValue)itmp));
 
 	if (streamer.readDouble (dtmp) == false)
 		return (kResultFalse);

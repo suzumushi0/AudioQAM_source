@@ -1,7 +1,7 @@
 //
 // Copyright (c) 2023 suzumushi
 //
-// 2023-4-2		AQprocessor.h
+// 2023-5-10		AQprocessor.h
 //
 // Licensed under Creative Commons Attribution-NonCommercial-ShareAlike 4.0 (CC BY-NC-SA 4.0).
 //
@@ -16,6 +16,7 @@
 #include "AQparam.h"
 #include "AQDDS.h"
 #include "AQHilbert.h"
+#include "AQFIRfilters.h"
 #include "SO2ndordIIRfilters.h"
 
 using namespace Steinberg;
@@ -72,19 +73,19 @@ protected:
 
 	// DSP instances 
 	static constexpr int HT_IR_LEN = 771;			// impulse response length of Hilbert transformer
-	AQDDS <double>						DDS;
-	SODDL <double, (HT_IR_LEN - 1) / 2>	DDL_L;
-	SODDL <double, (HT_IR_LEN - 1) / 2>	DDL_R;
-	AQHilbert <double, HT_IR_LEN>		HT_L;
-	AQHilbert <double, HT_IR_LEN>		HT_R;
-	SOHPF <double>						I_HPF_L;
-	SOHPF <double>						I_HPF_R;
-	SOLPF <double, i_l_freq.max>		I_LPF_L;
-	SOLPF <double, i_l_freq.max>		I_LPF_R;
-	SOHPF <double>						O_HPF_L;
-	SOHPF <double>						O_HPF_R;
-	SOLPF <double, o_l_freq.max>		O_LPF_L;
-	SOLPF <double, o_l_freq.max>		O_LPF_R;
+	AQDDS <double>									DDS;
+	SODDL <double, (HT_IR_LEN - 1) / 2>				DDL_L;
+	SODDL <double, (HT_IR_LEN - 1) / 2>				DDL_R;
+	AQHilbert <double, HT_IR_LEN>					HT_L;
+	AQHilbert <double, HT_IR_LEN>					HT_R;
+	AQFIRfilters <double, 131, false>				I_HPF_L;
+	AQFIRfilters <double, 131, false>				I_HPF_R;
+	SOLPF <double, i_l_freq.max>					I_LPF_L;
+	SOLPF <double, i_l_freq.max>					I_LPF_R;
+	SOHPF <double>									O_HPF_L;
+	SOHPF <double>									O_HPF_R;
+	SOLPF <double, o_l_freq.max>					O_LPF_L;
+	SOLPF <double, o_l_freq.max>					O_LPF_R;
 
 	// internal functions
 	void gui_param_loading ();

@@ -1,7 +1,7 @@
 //
 // Copyright (c) 2023 suzumushi
 //
-// 2023-4-5		AQprocessor.cpp
+// 2023-5-10		AQprocessor.cpp
 //
 // Licensed under Creative Commons Attribution-NonCommercial-ShareAlike 4.0 (CC BY-NC-SA 4.0).
 //
@@ -198,6 +198,14 @@ tresult PLUGIN_API AudioQAMProcessor:: setState (IBStream* state)
 		return (kResultFalse);
 	if (streamer.readInt32 (gp_load.wform) == false)
 		return (kResultFalse);
+
+	if (version == 0) 
+		gp_load.auto_bl = (int32) AUTO_BL_L::AUTOMATIC;
+	else {
+		if (streamer.readInt32 (gp_load.auto_bl) == false)
+			return (kResultFalse);
+	}
+
 	if (streamer.readDouble (gp_load.c_slide) == false)
 		return (kResultFalse);
 	if (streamer.readInt32 (gp_load.c_range) == false)
@@ -231,13 +239,15 @@ tresult PLUGIN_API AudioQAMProcessor:: getState (IBStream* state)
 	IBStreamer streamer (state, kLittleEndian);
 
 	// suzumushi:
-	int version = 0;
+	int version = 1;
 	if (streamer.writeInt32 (version) == false)
 		return (kResultFalse);
 
 	if (streamer.writeDouble (gp.c_freq) == false)
 		return (kResultFalse);
 	if (streamer.writeInt32 (gp.wform) == false)
+		return (kResultFalse);
+	if (streamer.writeInt32 (gp.auto_bl) == false)
 		return (kResultFalse);
 	if (streamer.writeDouble (gp.c_slide) == false)
 		return (kResultFalse);
@@ -270,6 +280,7 @@ void AudioQAMProcessor:: gui_param_loading ()
 	if (gp_load.load) {
 		gp.c_freq = gp_load.c_freq;
 		gp.wform = gp_load.wform;
+		gp.auto_bl = gp_load.auto_bl;
 		gp.c_slide = gp_load.c_slide;
 		gp.c_range = gp_load.c_range;
 		gp.c_scale = gp_load.c_scale;
@@ -304,6 +315,9 @@ void AudioQAMProcessor:: gui_param_update (const ParamID paramID, const ParamVal
 		case wform.tag:
 			gp.wform = stringListParameter::toPlain (paramValue, (int32)WFORM_L::LIST_LEN);
 			break;
+		case auto_bl.tag:
+			gp.auto_bl = stringListParameter::toPlain (paramValue, (int32)AUTO_BL_L::LIST_LEN);
+			break;
 		case c_slide.tag:
 			update = rangeParameter::toPlain (paramValue, c_slide.min, c_slide.max);
 			if (gp.c_slide != update) {
@@ -336,7 +350,7 @@ void AudioQAMProcessor:: gui_param_update (const ParamID paramID, const ParamVal
 			}
 			break;
 		case i_l_freq.tag:
-			update = Vst::LogTaperParameter::toPlain (paramValue, i_l_freq.min, i_l_freq.max);
+			update = Vst::InfLogTaperParameter::toPlain (paramValue, i_l_freq.min, i_l_freq.max);
 			if (gp.i_l_freq != update) {
 				gp.i_l_freq = update;
 				gp.i_l_freq_changed = true;
@@ -350,7 +364,7 @@ void AudioQAMProcessor:: gui_param_update (const ParamID paramID, const ParamVal
 			}
 			break;
 		case o_l_freq.tag:
-			update = Vst::LogTaperParameter::toPlain (paramValue, o_l_freq.min, o_l_freq.max);
+			update = Vst::InfLogTaperParameter::toPlain (paramValue, o_l_freq.min, o_l_freq.max);
 			if (gp.o_l_freq != update) {
 				gp.o_l_freq = update;
 				gp.o_l_freq_changed = true;
@@ -370,11 +384,20 @@ void AudioQAMProcessor:: gui_param_update (const ParamID paramID, const ParamVal
 
 void AudioQAMProcessor:: dsp_param_update (IParameterChanges* outParam)
 {
+	int32 q_index = 0;		// paramQueue index
+	int32 p_index = 0;		// parameter index
+	int32 p_offset = 0;		// parameter offset
+
 	gui_param_loading ();
 
 	if (gp.reset || gp.c_freq_changed || gp.c_range_changed || gp.c_scale_changed) {
-		if (gp.reset || gp.c_freq_changed)
+		gp.c_range_changed = gp.c_scale_changed = gp.c_slide_changed = false;
+
+		if (gp.reset || gp.c_freq_changed) {
+			gp.c_freq_changed = true;
 			DDS.setup (processSetup.sampleRate, abs (gp.c_freq));
+		}
+
 		if (gp.c_freq >= c_range_val [gp.c_range])
 			gp.c_slide = 1.0;
 		else if (gp.c_freq <= - c_range_val [gp.c_range])
@@ -387,20 +410,18 @@ void AudioQAMProcessor:: dsp_param_update (IParameterChanges* outParam)
 			if (gp.c_freq < 0.0)
 				gp.c_slide = - gp.c_slide;
 		}
-		gp.c_freq_changed = gp.c_range_changed = gp.c_slide_changed = gp.c_scale_changed = false;
+
 		// feedback gp.c_slide
 		if (outParam) {
-			int32 q_index = 0;		// paramQueue index
-			int32 p_index = 0;		// parameter index
-			int32 p_offset = 0;		// parameter offset
 			IParamValueQueue* paramQueue = outParam->addParameterData (c_slide.tag, q_index);
 			if (paramQueue)
-				paramQueue->addPoint (p_offset, rangeParameter::toNormalized (gp.c_slide, c_slide.min, c_slide.max), p_index);;
+				paramQueue->addPoint (p_offset, rangeParameter::toNormalized (gp.c_slide, c_slide.min, c_slide.max), p_index);
 		}
 	}
 
 	if (gp.c_slide_changed) {
 		gp.c_slide_changed = false;
+		gp.c_freq_changed = true;
 		if (gp.c_scale == (int32)C_SCALE_L::LINEAR)		
 			gp.c_freq = abs (gp.c_slide) * c_range_val [gp.c_range];
 		else						// Logarithmic
@@ -408,16 +429,40 @@ void AudioQAMProcessor:: dsp_param_update (IParameterChanges* outParam)
 		DDS.setup (processSetup.sampleRate, gp.c_freq);
 		if (gp.c_slide < 0.0)
 			gp.c_freq = - gp.c_freq;
+
 		// feedback gp.c_freq
 		if (outParam) {
-			int32 q_index = 0;		// paramQueue index
-			int32 p_index = 0;		// parameter index
-			int32 p_offset = 0;		// parameter offset
 			IParamValueQueue* paramQueue = outParam->addParameterData (c_freq.tag, q_index);
 			if (paramQueue)
-				paramQueue->addPoint (p_offset, rangeParameter::toNormalized (gp.c_freq, c_freq.min, c_freq.max), p_index);;
+				paramQueue->addPoint (p_offset, rangeParameter::toNormalized (gp.c_freq, c_freq.min, c_freq.max), p_index);
 		}
 	}
+
+	if (gp.c_freq_changed && gp.auto_bl == (int32)AUTO_BL_L::AUTOMATIC) {
+		if (gp.wform == (int32)WFORM_L::SINE) {
+			if (gp.c_freq < 0.0)
+				gp.i_h_freq = std::max (300.0 - gp.c_freq, i_h_freq.min);
+			else
+				gp.i_h_freq = i_h_freq.min;
+			gp.i_h_freq_changed = true;
+			// feedback i_h_freq
+			if (outParam) {
+				IParamValueQueue* paramQueue = outParam->addParameterData (i_h_freq.tag, q_index);
+				if (paramQueue)
+					paramQueue->addPoint (p_offset, InfLogTaperParameter::toNormalized (gp.i_h_freq, i_h_freq.min, i_h_freq.max), p_index);
+			}
+		} else {
+			gp.i_l_freq = std::max (abs (gp.c_freq), i_l_freq.min);
+			gp.i_l_freq_changed = true;
+			// feedback i_l_freq
+			if (outParam) {
+				IParamValueQueue* paramQueue = outParam->addParameterData (i_l_freq.tag, q_index);
+				if (paramQueue)
+					paramQueue->addPoint (p_offset, InfLogTaperParameter::toNormalized (gp.i_l_freq, i_l_freq.min, i_l_freq.max), p_index);
+			}
+		}
+	}
+	gp.c_freq_changed = false;
 
 	if (gp.reset || gp.i_h_freq_changed) {
 		gp.i_h_freq_changed = false;
