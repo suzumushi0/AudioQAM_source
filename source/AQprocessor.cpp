@@ -1,7 +1,7 @@
 //
 // Copyright (c) 2023 suzumushi
 //
-// 2023-5-10		AQprocessor.cpp
+// 2023-10-16		AQprocessor.cpp
 //
 // Licensed under Creative Commons Attribution-NonCommercial-ShareAlike 4.0 (CC BY-NC-SA 4.0).
 //
@@ -303,7 +303,7 @@ void AudioQAMProcessor:: gui_param_update (const ParamID paramID, const ParamVal
 
 	switch (paramID) {
 		case c_freq.tag:
-			update = rangeParameter::toPlain (paramValue, c_freq.min, c_freq.max);
+			update = rangeParameter::toPlain (paramValue, c_freq);
 			if (gp.c_freq != update) {
 				double sgn = gp.c_freq * update;
 				if (sgn < 0.0 || (sgn == 0.0 && (gp.c_freq < 0.0 || update < 0.0)))
@@ -319,7 +319,7 @@ void AudioQAMProcessor:: gui_param_update (const ParamID paramID, const ParamVal
 			gp.auto_bl = stringListParameter::toPlain (paramValue, (int32)AUTO_BL_L::LIST_LEN);
 			break;
 		case c_slide.tag:
-			update = rangeParameter::toPlain (paramValue, c_slide.min, c_slide.max);
+			update = rangeParameter::toPlain (paramValue, c_slide);
 			if (gp.c_slide != update) {
 				double sgn = gp.c_slide * update;
 				if (sgn < 0.0 || (sgn == 0.0 && (gp.c_slide < 0.0 || update < 0.0)))
@@ -343,35 +343,35 @@ void AudioQAMProcessor:: gui_param_update (const ParamID paramID, const ParamVal
 			}
 			break;
 		case i_h_freq.tag:
-			update = Vst::LogTaperParameter::toPlain (paramValue, i_h_freq.min, i_h_freq.max);
+			update = Vst::LogTaperParameter::toPlain (paramValue, i_h_freq);
 			if (gp.i_h_freq != update) {
 				gp.i_h_freq = update;
 				gp.i_h_freq_changed = true;
 			}
 			break;
 		case i_l_freq.tag:
-			update = Vst::InfLogTaperParameter::toPlain (paramValue, i_l_freq.min, i_l_freq.max);
+			update = Vst::InfLogTaperParameter::toPlain (paramValue, i_l_freq);
 			if (gp.i_l_freq != update) {
 				gp.i_l_freq = update;
 				gp.i_l_freq_changed = true;
 			}
 			break;
 		case o_h_freq.tag:
-			update = Vst::LogTaperParameter::toPlain (paramValue, o_h_freq.min, o_h_freq.max);
+			update = Vst::LogTaperParameter::toPlain (paramValue, o_h_freq);
 			if (gp.o_h_freq != update) {
 				gp.o_h_freq = update;
 				gp.o_h_freq_changed = true;
 			}
 			break;
 		case o_l_freq.tag:
-			update = Vst::InfLogTaperParameter::toPlain (paramValue, o_l_freq.min, o_l_freq.max);
+			update = Vst::InfLogTaperParameter::toPlain (paramValue, o_l_freq);
 			if (gp.o_l_freq != update) {
 				gp.o_l_freq = update;
 				gp.o_l_freq_changed = true;
 			}
 			break;
 		case wet.tag:
-			gp.wet = rangeParameter::toPlain (paramValue, wet.min, wet.max);
+			gp.wet = rangeParameter::toPlain (paramValue, wet);
 			gp.dry = 1.0 - gp.wet;
 			break;
 		case bypass.tag:
@@ -415,7 +415,7 @@ void AudioQAMProcessor:: dsp_param_update (IParameterChanges* outParam)
 		if (outParam) {
 			IParamValueQueue* paramQueue = outParam->addParameterData (c_slide.tag, q_index);
 			if (paramQueue)
-				paramQueue->addPoint (p_offset, rangeParameter::toNormalized (gp.c_slide, c_slide.min, c_slide.max), p_index);
+				paramQueue->addPoint (p_offset, rangeParameter::toNormalized (gp.c_slide, c_slide), p_index);
 		}
 	}
 
@@ -434,7 +434,7 @@ void AudioQAMProcessor:: dsp_param_update (IParameterChanges* outParam)
 		if (outParam) {
 			IParamValueQueue* paramQueue = outParam->addParameterData (c_freq.tag, q_index);
 			if (paramQueue)
-				paramQueue->addPoint (p_offset, rangeParameter::toNormalized (gp.c_freq, c_freq.min, c_freq.max), p_index);
+				paramQueue->addPoint (p_offset, rangeParameter::toNormalized (gp.c_freq, c_freq), p_index);
 		}
 	}
 
@@ -449,7 +449,7 @@ void AudioQAMProcessor:: dsp_param_update (IParameterChanges* outParam)
 			if (outParam) {
 				IParamValueQueue* paramQueue = outParam->addParameterData (i_h_freq.tag, q_index);
 				if (paramQueue)
-					paramQueue->addPoint (p_offset, InfLogTaperParameter::toNormalized (gp.i_h_freq, i_h_freq.min, i_h_freq.max), p_index);
+					paramQueue->addPoint (p_offset, InfLogTaperParameter::toNormalized (gp.i_h_freq, i_h_freq), p_index);
 			}
 		} else {
 			gp.i_l_freq = std::max (abs (gp.c_freq), i_l_freq.min);
@@ -458,7 +458,7 @@ void AudioQAMProcessor:: dsp_param_update (IParameterChanges* outParam)
 			if (outParam) {
 				IParamValueQueue* paramQueue = outParam->addParameterData (i_l_freq.tag, q_index);
 				if (paramQueue)
-					paramQueue->addPoint (p_offset, InfLogTaperParameter::toNormalized (gp.i_l_freq, i_l_freq.min, i_l_freq.max), p_index);
+					paramQueue->addPoint (p_offset, InfLogTaperParameter::toNormalized (gp.i_l_freq, i_l_freq), p_index);
 			}
 		}
 	}

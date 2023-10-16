@@ -1,7 +1,7 @@
 //
 // Copyright (c) 2023 suzumushi
 //
-// 2023-5-8		AQcontroller.cpp
+// 2023-10-16		AQcontroller.cpp
 //
 // Licensed under Creative Commons Attribution-NonCommercial-ShareAlike 4.0 (CC BY-NC-SA 4.0).
 //
@@ -221,6 +221,11 @@ IPlugView* PLUGIN_API AudioQAMController:: createView (FIDString name)
 	{
 		// create your editor here and return a IPlugView ptr of it
 		auto* view = new VSTGUI::VST3Editor (this, "view", "AudioQAM.uidesc");
+
+		// suzumushi
+		std::vector<double> zoom_factors = {0.5, 0.75, 1.0, 1.25, 1.5, 1.75, 2.0};
+		view->setAllowedZoomFactors (zoom_factors);
+
 		return view;
 	}
 	return nullptr;
