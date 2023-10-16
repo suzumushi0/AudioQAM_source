@@ -10,7 +10,7 @@ project(AudioQAM
     # This is your plug-in version number. Change it here only.
     # Version number symbols usable in C++ can be found in
     # source/version.h and ${PROJECT_BINARY_DIR}/projectversion.h.
-    VERSION 1.1.0.0 
+    VERSION 1.1.1.0 
     DESCRIPTION "AudioQAM VST 3 Plug-in"
 )
 
@@ -42,7 +42,7 @@ smtg_add_vst3plugin(AudioQAM
 )
 
 #- VSTGUI Wanted ----
-if(SMTG_ADD_VSTGUI)
+if(SMTG_ENABLE_VSTGUI_SUPPORT)
     target_sources(AudioQAM
         PRIVATE
             resource/AudioQAM.uidesc
@@ -55,7 +55,7 @@ if(SMTG_ADD_VSTGUI)
         RESOURCES
             "resource/AudioQAM.uidesc"
     )
-endif(SMTG_ADD_VSTGUI)
+endif(SMTG_ENABLE_VSTGUI_SUPPORT)
 # -------------------
 
 smtg_target_add_plugin_snapshots (AudioQAM
